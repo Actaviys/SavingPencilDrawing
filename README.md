@@ -1,4 +1,4 @@
-## A simple drawing program. May be useful when creating datasets for handwriting analysis.
+## Проста програма для малювання. Може знадобитись при створенні датасетів для анілізу письма.
 
 
 Бібліотеки: \
