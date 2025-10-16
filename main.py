@@ -78,7 +78,7 @@ class DrawingWidget(QtWidgets.QWidget):
             self.is_erasing = False  # Вимикаємо гумку при зміні кольору
 
     def choose_size(self, coun_size):
-        size = coun_size.value() ##########################
+        size = coun_size.value()
         self.brush_size = size
     
     def clear_canvas(self):
@@ -91,7 +91,7 @@ class DrawingWidget(QtWidgets.QWidget):
             state_eras.setText("Eraser `ON`") #
         else: state_eras.setText("Eraser `OFF`")
         
-    def save_image(self, format_combo, width_edit, height_edit) -> bool:
+    def save_image(self, format_combo, width_edit, height_edit, name_file="") -> bool:
         # Отримуємо формат
         file_format = format_combo.currentText().lower()
         if not file_format:
@@ -109,13 +109,19 @@ class DrawingWidget(QtWidgets.QWidget):
         # Якщо потрібно, масштабуємо зображення
         save_image = self.image.scaled(width, height, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
 
-        # Діалог збереження
-        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Зберегти зображення", "", f"Images (*.{file_format})")
+        # Якщо є то добавляю свою назву
+        if name_file != "": #
+            # Діалог збереження
+            file_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Зберегти зображення", f"{name_file}", f"Images (*.{file_format})")
+        else:
+            # Діалог збереження
+            file_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Зберегти зображення", "", f"Images (*.{file_format})")
+        
+        # Зберігаю забраження
         if file_path:
             if not file_path.endswith(f".{file_format}"):
                 file_path += f".{file_format}"
             save_image.save(file_path)
-            # QtWidgets.QMessageBox.information(self, "Успіх", "Зображення збережено!")
             return True
         return False
 
@@ -131,7 +137,7 @@ textCombitationsKey = "Combinations Key:\n \
 
 def resource_path(relative_path):
     """ 
-    Отримати абсолютний шлях до ресурсу, працює як для розробників, так і для PyInstaller. 
+    Отримати абсолютний шлях до ресурсу, для PyInstaller. 
     Для успішного компілювання іконки в .exe файл.
     """
     try:
@@ -151,11 +157,13 @@ class Ui_Form(object):
         Form.setMinimumSize(QtCore.QSize(800, 550)) # Мінімальний розмір вікна
         Form.setMaximumSize(QtCore.QSize(800, 550)) # Максимальний розмір вікна
         
-        icon_path = resource_path("pencil.ico")  # Тепер шлях динамічний
+        icon_path = resource_path("pencil.ico")  # Для компіляції ()
+        # icon_path = "C:\\..SavingPencilDrawing\\Resource\\pencil.ico"  # Для розробки
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(icon_path), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         Form.setWindowIcon(icon)
 
+        self.counterSavedFileNamed = None # Для лічильника збережених файлів
         
         # Головний лейаут #
         self.gridLayout = QtWidgets.QGridLayout(Form)
@@ -209,7 +217,7 @@ class Ui_Form(object):
         self.verticalLayout.addWidget(self.Label_IconW)
         #   #
         
-        # Роздільна лінія #
+        # Роздільна лінія 1 #
         self.line = QtWidgets.QFrame(Form)
         self.line.setFrameShadow(QtWidgets.QFrame.Plain)
         self.line.setLineWidth(2)
@@ -226,13 +234,26 @@ class Ui_Form(object):
         #   #
         
         
-        # Роздільна лінія #
+        # Роздільна лінія 2 #
         self.line_1 = QtWidgets.QFrame(Form)
         self.line_1.setFrameShadow(QtWidgets.QFrame.Plain)
         self.line_1.setLineWidth(2)
         self.line_1.setFrameShape(QtWidgets.QFrame.HLine)
         self.line_1.setObjectName("line")
         self.verticalLayout.addWidget(self.line_1)
+        #   #
+        
+        # Початок назви для зберігання картинок #
+        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.LabelFileStartName = QtWidgets.QLabel(Form)
+        self.LabelFileStartName.setObjectName("LabelFileStartName")
+        self.horizontalLayout_3.addWidget(self.LabelFileStartName)
+        self.LineFileStartName = QtWidgets.QLineEdit(Form)
+        self.LineFileStartName.setObjectName("LineEditFileStartName")
+        self.LabelFileStartName.setText("Start count name (integer)")
+        self.horizontalLayout_3.addWidget(self.LineFileStartName)
+        self.verticalLayout.addLayout(self.horizontalLayout_3)
         #   #
 
         # Авто-очищення поля #
@@ -296,7 +317,7 @@ class Ui_Form(object):
         self.gridLayout.addLayout(self.verticalLayout, 0, 0, 1, 1)
         #   #
 
-        # Роздільна лінія #
+        # Роздільна лінія 3 #
         self.line_3 = QtWidgets.QFrame(Form)
         self.line_3.setFrameShadow(QtWidgets.QFrame.Plain)
         self.line_3.setLineWidth(2)
@@ -311,25 +332,44 @@ class Ui_Form(object):
         self.WidgetPainter.setMinimumSize(550, 550)  # Мінімальний розмір для полотна
         self.gridLayout.addWidget(self.WidgetPainter, 0, 2, 1, 1)
 
-        # Підключаємо кнопок до методів 'DrawingWidget'
+        # Підключаємо сигнали до методів 'DrawingWidget'
         self.ButtonClearField.clicked.connect(self.WidgetPainter.clear_canvas)
         self.ButtonSetColor.clicked.connect(self.WidgetPainter.choose_color)
         self.ButtonSaveImage.clicked.connect(self.metodSaverImage)
         self.ButtonEraser.clicked.connect(lambda: self.WidgetPainter.toggle_eraser(self.ButtonEraser))
         self.SpinBoxChangeBrushSize.setValue(self.WidgetPainter.brush_size)
         self.SpinBoxChangeBrushSize.valueChanged.connect(lambda: self.WidgetPainter.choose_size(self.SpinBoxChangeBrushSize))
+        self.LineFileStartName.textChanged.connect(self.metodCounterNameFiles)
         #   #
 
         self.metodHandlingKeyCombinations() # Підключаю обробку комбінацій клавіш
         QtCore.QMetaObject.connectSlotsByName(Form)
     
+    
+    def metodCounterNameFiles(self):
+        """ Метод для для початкової назви файлу """
+        txrRf = self.LineFileStartName.text()
+        if txrRf:
+            try:
+                self.counterSavedFileNamed = int(txrRf)
+            except:
+                self.LineFileStartName.clear()
+        else: self.counterSavedFileNamed = None
+    
+    
     def metodSaverImage(self):
         """ Метод для збереження зображення з полотна та очищення полотна, якщо потрібно """
-        resSave = self.WidgetPainter.save_image(self.ComboBoxSetFormat, self.LineSetWidth, self.LineSetHeight)
+        if self.counterSavedFileNamed != None:
+            resSave = self.WidgetPainter.save_image(self.ComboBoxSetFormat, self.LineSetWidth, self.LineSetHeight, self.counterSavedFileNamed)
+            self.counterSavedFileNamed += 1
+        else:
+            resSave = self.WidgetPainter.save_image(self.ComboBoxSetFormat, self.LineSetWidth, self.LineSetHeight)
         if self.CheckBoxAutoClean.isChecked() and resSave:
             self.WidgetPainter.clear_canvas()
+
     
     def metodHandlingKeyCombinations(self):
+        """ Метод для для додавання шорткатів """
         # Додаємо шорткат 'Ctrl+S, Q' для збереження
         self.shortcutSaveCombination_CtrS = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+S"), Form)
         self.shortcutSaveCombination_CtrS.activated.connect(self.metodSaverImage)
@@ -362,7 +402,6 @@ app = QtWidgets.QApplication(sys.argv)
 Form = QtWidgets.QWidget()
 ui = Ui_Form()
 ui.setupUi(Form)
-
 
 
 if __name__ == "__main__":
