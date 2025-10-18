@@ -91,7 +91,7 @@ class DrawingWidget(QtWidgets.QWidget):
             state_eras.setText("Eraser `ON`") #
         else: state_eras.setText("Eraser `OFF`")
         
-    def save_image(self, format_combo, width_edit, height_edit, name_file="") -> bool:
+    def save_image(self, dir_linck, format_combo, width_edit, height_edit, name_file="") -> bool:
         # Отримуємо формат
         file_format = format_combo.currentText().lower()
         if not file_format:
@@ -112,10 +112,10 @@ class DrawingWidget(QtWidgets.QWidget):
         # Якщо є то добавляю свою назву
         if name_file != "": #
             # Діалог збереження
-            file_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Зберегти зображення", f"{name_file}", f"Images (*.{file_format})")
+            file_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Зберегти зображення", f"{dir_linck}\\{name_file}", f"Images (*.{file_format})")
         else:
             # Діалог збереження
-            file_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Зберегти зображення", "", f"Images (*.{file_format})")
+            file_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Зберегти зображення", dir_linck, f"Images (*.{file_format})")
         
         # Зберігаю забраження
         if file_path:
@@ -243,6 +243,20 @@ class Ui_Form(object):
         self.verticalLayout.addWidget(self.line_1)
         #   #
         
+        # Папка для збереження зображень #
+        self.ButtonSelectFolderSaved = QtWidgets.QPushButton(Form)
+        self.ButtonSelectFolderSaved.setObjectName("ButtonSelectFolderSaved")
+        self.ButtonSelectFolderSaved.setText("Select folder to save")
+        self.verticalLayout.addWidget(self.ButtonSelectFolderSaved)
+        #   #
+        
+        # Лейбл для обраної папки #
+        self.LabelStatusFoldefSelect = QtWidgets.QLabel(Form)
+        self.LabelStatusFoldefSelect.setObjectName("LabelStatusFoldefSelect")
+        self.LabelStatusFoldefSelect.setText("No selected folder")
+        self.verticalLayout.addWidget(self.LabelStatusFoldefSelect)
+        #   #
+        
         # Початок назви для зберігання картинок #
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
@@ -340,6 +354,7 @@ class Ui_Form(object):
         self.SpinBoxChangeBrushSize.setValue(self.WidgetPainter.brush_size)
         self.SpinBoxChangeBrushSize.valueChanged.connect(lambda: self.WidgetPainter.choose_size(self.SpinBoxChangeBrushSize))
         self.LineFileStartName.textChanged.connect(self.metodCounterNameFiles)
+        self.ButtonSelectFolderSaved.clicked.connect(self.metodSetPathToSavedImages)
         #   #
 
         self.metodHandlingKeyCombinations() # Підключаю обробку комбінацій клавіш
@@ -356,18 +371,33 @@ class Ui_Form(object):
                 self.LineFileStartName.clear()
         else: self.counterSavedFileNamed = None
     
+    def metodSetPathToSavedImages(self):
+        """ Для вибору папки для збереження """
+        self.saved_path_linck = QtWidgets.QFileDialog.getExistingDirectory()
+        rsTxtFg = ""
+        if len(self.saved_path_linck) >= 35:
+            rsTxtFg += self.saved_path_linck[:8:]
+            rsTxtFg += " .... "
+            rsTxtFg += self.saved_path_linck[-27::]
+        else:
+            rsTxtFg += self.saved_path_linck
+        self.LabelStatusFoldefSelect.setText(rsTxtFg)
     
     def metodSaverImage(self):
         """ Метод для збереження зображення з полотна та очищення полотна, якщо потрібно """
-        if self.counterSavedFileNamed != None:
-            resSave = self.WidgetPainter.save_image(self.ComboBoxSetFormat, self.LineSetWidth, self.LineSetHeight, self.counterSavedFileNamed)
-            if resSave:
-                self.counterSavedFileNamed += 1
-            else: pass
+        if self.saved_path_linck:
+            if self.counterSavedFileNamed != None:
+                resSave = self.WidgetPainter.save_image(self.saved_path_linck, self.ComboBoxSetFormat, self.LineSetWidth, self.LineSetHeight, str(self.counterSavedFileNamed))
+                if resSave:
+                    self.counterSavedFileNamed += 1
+                else: pass
+            else:
+                resSave = self.WidgetPainter.save_image(self.saved_path_linck, self.ComboBoxSetFormat, self.LineSetWidth, self.LineSetHeight)
+            
+            if self.CheckBoxAutoClean.isChecked() and resSave:
+                self.WidgetPainter.clear_canvas()
         else:
-            resSave = self.WidgetPainter.save_image(self.ComboBoxSetFormat, self.LineSetWidth, self.LineSetHeight)
-        if self.CheckBoxAutoClean.isChecked() and resSave:
-            self.WidgetPainter.clear_canvas()
+            self.LabelStatusFoldefSelect.setText("Path no select!")
 
     
     def metodHandlingKeyCombinations(self):
