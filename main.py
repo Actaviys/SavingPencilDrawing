@@ -164,6 +164,7 @@ class Ui_Form(object):
         Form.setWindowIcon(icon)
 
         self.counterSavedFileNamed = None # Для лічильника збережених файлів
+        self.saved_path_linck = "" # Для шляху збереження зображень
         
         # Головний лейаут #
         self.gridLayout = QtWidgets.QGridLayout(Form)
