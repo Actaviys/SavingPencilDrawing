@@ -361,7 +361,9 @@ class Ui_Form(object):
         """ Метод для збереження зображення з полотна та очищення полотна, якщо потрібно """
         if self.counterSavedFileNamed != None:
             resSave = self.WidgetPainter.save_image(self.ComboBoxSetFormat, self.LineSetWidth, self.LineSetHeight, self.counterSavedFileNamed)
-            self.counterSavedFileNamed += 1
+            if resSave:
+                self.counterSavedFileNamed += 1
+            else: pass
         else:
             resSave = self.WidgetPainter.save_image(self.ComboBoxSetFormat, self.LineSetWidth, self.LineSetHeight)
         if self.CheckBoxAutoClean.isChecked() and resSave:
